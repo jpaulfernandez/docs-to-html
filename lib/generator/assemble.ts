@@ -3,24 +3,24 @@ import { ClassificationResult } from "../types/ai";
 import { SeoData } from "../types/ai";
 import { Theme, getThemeCss } from "./themes";
 import {
-    heroSection, sectionTitle, subsection, bodySection, boldSection,
-    pullQuote, statBlock, inlineImage, chartSection, dataTable,
-    dividerSection, calloutBox, videoEmbed, twoColumnSection, footerSection,
+  heroSection, sectionTitle, subsection, bodySection, boldSection,
+  pullQuote, statBlock, inlineImage, chartSection, dataTable,
+  dividerSection, calloutBox, videoEmbed, twoColumnSection, footerSection,
 } from "./components";
 import { CHART_INIT_SCRIPT } from "./charts";
 
 export interface AssembleOptions {
-    blocks: Block[];
-    csvData: Record<string, CsvData>;
-    classification: ClassificationResult[];
-    seoData: SeoData;
-    theme: Theme;
-    docName?: string;
+  blocks: Block[];
+  csvData: Record<string, CsvData>;
+  classification: ClassificationResult[];
+  seoData: SeoData;
+  theme: Theme;
+  docName?: string;
 }
 
 function getArchetype(block: Block, classification: ClassificationResult[]): string {
-    const ai = classification.find((c) => c.blockIndex === block.index);
-    return ai?.archetype ?? block.archetype ?? block.heuristicArchetype ?? "body";
+  const ai = classification.find((c) => c.blockIndex === block.index);
+  return ai?.archetype ?? block.archetype ?? block.heuristicArchetype ?? "body";
 }
 
 const BASE_CSS = `
@@ -209,131 +209,131 @@ article { max-width: 100%; }
 `;
 
 export function assembleHtml(opts: AssembleOptions): string {
-    const { blocks, csvData, classification, seoData, theme, docName } = opts;
+  const { blocks, csvData, classification, seoData, theme } = opts;
 
-    const themeCss = getThemeCss(theme);
+  const themeCss = getThemeCss(theme);
 
-    // --- Build body HTML ---
-    const bodyParts: string[] = [];
-    let chartIndex = 0;
-    let i = 0;
-    let hasHero = false;
+  // --- Build body HTML ---
+  const bodyParts: string[] = [];
+  let chartIndex = 0;
+  let i = 0;
+  let hasHero = false;
 
-    while (i < blocks.length) {
-        const block = blocks[i];
-        const archetype = getArchetype(block, classification);
+  while (i < blocks.length) {
+    const block = blocks[i];
+    const archetype = getArchetype(block, classification);
 
-        // Hero
-        if (!hasHero && block.type === "heading1") {
-            bodyParts.push(heroSection(block));
-            hasHero = true;
-            i++;
-            continue;
-        }
-
-        // Collect consecutive stat annotations on the same block
-        const statAnns = block.annotations.filter((a) => a.keyword === "stat" && a.valid !== false);
-        if (statAnns.length > 0) {
-            const stats = statAnns.map((a) => ({
-                value: a.primaryValue ?? a.params.value ?? "–",
-                label: a.params.label ?? "",
-            }));
-            bodyParts.push(statBlock(stats));
-            i++;
-            continue;
-        }
-
-        // Image annotation
-        const imageAnn = block.annotations.find((a) => a.keyword === "image");
-        if (imageAnn) {
-            const pos = imageAnn.params.position ?? "inline";
-            if (pos !== "background") {
-                bodyParts.push(inlineImage(imageAnn));
-            }
-            // background images are handled inside heroSection; skip standalone
-            i++;
-            continue;
-        }
-
-        // Chart annotation
-        const chartAnn = block.annotations.find((a) => a.keyword === "chart");
-        if (chartAnn) {
-            bodyParts.push(chartSection(block, chartAnn, csvData, chartIndex++));
-            i++;
-            continue;
-        }
-
-        // Callout
-        const calloutAnn = block.annotations.find((a) => a.keyword === "callout");
-        if (calloutAnn) {
-            bodyParts.push(calloutBox(block, calloutAnn));
-            i++;
-            continue;
-        }
-
-        // Embed / video
-        const embedAnn = block.annotations.find((a) => a.keyword === "embed");
-        if (embedAnn) {
-            bodyParts.push(videoEmbed(embedAnn));
-            i++;
-            continue;
-        }
-
-        // Layout: two-column
-        const layoutAnn = block.annotations.find((a) => a.keyword === "layout");
-        if (layoutAnn?.primaryValue === "two-column") {
-            bodyParts.push(twoColumnSection(block));
-            i++;
-            continue;
-        }
-
-        // Fall through to archetype
-        switch (archetype) {
-            case "hero":
-            case "section-break":
-                bodyParts.push(sectionTitle(block));
-                break;
-            case "section-title":
-                bodyParts.push(sectionTitle(block));
-                break;
-            case "subsection":
-                bodyParts.push(subsection(block));
-                break;
-            case "pull-quote":
-                bodyParts.push(pullQuote(block));
-                break;
-            case "data-table":
-                bodyParts.push(dataTable(block));
-                break;
-            case "divider":
-                bodyParts.push(dividerSection());
-                break;
-            case "emphasis":
-                bodyParts.push(boldSection(block));
-                break;
-            default:
-                if (block.content.trim()) {
-                    bodyParts.push(bodySection(block));
-                }
-        }
-        i++;
+    // Hero
+    if (!hasHero && block.type === "heading1") {
+      bodyParts.push(heroSection(block));
+      hasHero = true;
+      i++;
+      continue;
     }
 
-    bodyParts.push(footerSection());
+    // Collect consecutive stat annotations on the same block
+    const statAnns = block.annotations.filter((a) => a.keyword === "stat" && a.valid !== false);
+    if (statAnns.length > 0) {
+      const stats = statAnns.map((a) => ({
+        value: a.primaryValue ?? a.params.value ?? "–",
+        label: a.params.label ?? "",
+      }));
+      bodyParts.push(statBlock(stats));
+      i++;
+      continue;
+    }
 
-    const bodyHtml = `<article>\n${bodyParts.join("\n")}\n</article>`;
+    // Image annotation
+    const imageAnn = block.annotations.find((a) => a.keyword === "image");
+    if (imageAnn) {
+      const pos = imageAnn.params.position ?? "inline";
+      if (pos !== "background") {
+        bodyParts.push(inlineImage(imageAnn));
+      }
+      // background images are handled inside heroSection; skip standalone
+      i++;
+      continue;
+    }
 
-    // --- JSON-LD ---
-    const jsonLd = {
-        "@context": "https://schema.org",
-        "@type": "Article",
-        headline: seoData.title,
-        description: seoData.description,
-        datePublished: new Date().toISOString(),
-    };
+    // Chart annotation
+    const chartAnn = block.annotations.find((a) => a.keyword === "chart");
+    if (chartAnn) {
+      bodyParts.push(chartSection(block, chartAnn, csvData, chartIndex++));
+      i++;
+      continue;
+    }
 
-    // --- SEO head ---
-    const head = `<meta charset="UTF-8">
+    // Callout
+    const calloutAnn = block.annotations.find((a) => a.keyword === "callout");
+    if (calloutAnn) {
+      bodyParts.push(calloutBox(block, calloutAnn));
+      i++;
+      continue;
+    }
+
+    // Embed / video
+    const embedAnn = block.annotations.find((a) => a.keyword === "embed");
+    if (embedAnn) {
+      bodyParts.push(videoEmbed(embedAnn));
+      i++;
+      continue;
+    }
+
+    // Layout: two-column
+    const layoutAnn = block.annotations.find((a) => a.keyword === "layout");
+    if (layoutAnn?.primaryValue === "two-column") {
+      bodyParts.push(twoColumnSection(block));
+      i++;
+      continue;
+    }
+
+    // Fall through to archetype
+    switch (archetype) {
+      case "hero":
+      case "section-break":
+        bodyParts.push(sectionTitle(block));
+        break;
+      case "section-title":
+        bodyParts.push(sectionTitle(block));
+        break;
+      case "subsection":
+        bodyParts.push(subsection(block));
+        break;
+      case "pull-quote":
+        bodyParts.push(pullQuote(block));
+        break;
+      case "data-table":
+        bodyParts.push(dataTable(block));
+        break;
+      case "divider":
+        bodyParts.push(dividerSection());
+        break;
+      case "emphasis":
+        bodyParts.push(boldSection(block));
+        break;
+      default:
+        if (block.content.trim()) {
+          bodyParts.push(bodySection(block));
+        }
+    }
+    i++;
+  }
+
+  bodyParts.push(footerSection());
+
+  const bodyHtml = `<article>\n${bodyParts.join("\n")}\n</article>`;
+
+  // --- JSON-LD ---
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: seoData.title,
+    description: seoData.description,
+    datePublished: new Date().toISOString(),
+  };
+
+  // --- SEO head ---
+  const head = `<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${seoData.title}</title>
 <meta name="description" content="${seoData.description.replace(/"/g, "&quot;")}">
@@ -355,7 +355,7 @@ ${themeCss}
 ${BASE_CSS}
 </style>`;
 
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
 ${head}

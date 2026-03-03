@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { Block } from "@/lib/types/parser";
 

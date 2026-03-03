@@ -4,7 +4,7 @@ import { SeoData } from "../types/ai";
 import { Theme, getThemeCss } from "./themes";
 import {
   heroSection, sectionTitle, subsection, bodySection, boldSection,
-  pullQuote, statBlock, inlineImage, chartSection, dataTable,
+  pullQuote, summaryBox, statBlock, inlineImage, chartSection, dataTable,
   dividerSection, calloutBox, videoEmbed, twoColumnSection, footerSection,
 } from "./components";
 import { CHART_INIT_SCRIPT } from "./charts";
@@ -30,11 +30,22 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
-  line-height: 1.7;
-  font-size: 18px;
+  line-height: 1.625;
+  font-size: 1.125rem;
   -webkit-font-smoothing: antialiased;
 }
-article { max-width: 100%; }
+article { max-width: 100%; overflow-x: hidden; }
+
+/* Links */
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.3s ease;
+}
+a:hover {
+  color: var(--bg-alt);
+}
 
 /* Hero */
 .ms-hero {
@@ -44,9 +55,16 @@ article { max-width: 100%; }
   padding: 4rem 2rem 5rem;
   position: relative;
   background-color: var(--bg-alt);
+  overflow: hidden;
 }
 .ms-hero.ms-fullbleed { min-height: 100vh; }
-.ms-hero__inner { max-width: 860px; margin: 0 auto; width: 100%; }
+.ms-hero__bg {
+  position: absolute;
+  top: -15%; left: 0;
+  width: 100%; height: 130%;
+  z-index: 0;
+}
+.ms-hero__inner { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; width: 100%; }
 .ms-hero__title {
   font-family: var(--font-display);
   font-size: clamp(2.5rem, 6vw, 5rem);
@@ -59,9 +77,9 @@ article { max-width: 100%; }
 
 /* Body sections */
 .ms-section, .ms-body, .ms-subsection, .ms-emphasis, .ms-twocol {
-  max-width: 740px;
+  max-width: 768px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem;
+  padding: 3rem 1.5rem;
 }
 .ms-section__title {
   font-family: var(--font-display);
@@ -71,6 +89,7 @@ article { max-width: 100%; }
   margin-bottom: 1rem;
   border-left: 4px solid var(--accent);
   padding-left: 1rem;
+  clear: both;
 }
 .ms-subsection__title {
   font-family: var(--font-display);
@@ -78,11 +97,22 @@ article { max-width: 100%; }
   font-weight: 600;
   color: var(--text);
   margin-bottom: 0.5rem;
+  clear: both;
 }
 .ms-body__text {
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   color: var(--text);
-  line-height: 1.8;
+  line-height: 1.625;
+}
+.ms-body:first-of-type .ms-body__text::first-letter {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 5rem;
+  color: var(--accent);
+  float: left;
+  line-height: 1;
+  padding-right: 0.5rem;
+  margin-top: -0.5rem;
 }
 .ms-emphasis__text {
   font-family: var(--font-display);
@@ -94,11 +124,31 @@ article { max-width: 100%; }
 
 /* Pull quote */
 .ms-pullquote {
-  max-width: 860px;
   margin: 3rem auto;
-  padding: 2.5rem 3rem;
-  border-left: 5px solid var(--accent);
-  background: var(--bg-alt);
+  padding: 2.5rem 0;
+  background: transparent;
+  clear: both;
+}
+.ms-pullquote--center {
+  max-width: 860px;
+  border-top: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  text-align: center;
+}
+.ms-pullquote--right {
+  width: 50%;
+  float: right;
+  margin: 1.5rem 0 1.5rem 1.5rem;
+  padding: 1rem 0 1rem 1.5rem;
+  border-left: 4px solid var(--accent);
+  clear: right;
+}
+@media (max-width: 767px) {
+  .ms-pullquote--right {
+    width: 100%;
+    float: none;
+    margin: 2rem 0;
+  }
 }
 .ms-pullquote__text {
   font-family: var(--font-display);
@@ -106,6 +156,39 @@ article { max-width: 100%; }
   line-height: 1.4;
   color: var(--text);
   font-style: italic;
+}
+.ms-pullquote__citation {
+  display: block;
+  font-family: var(--font-condensed);
+  font-size: 0.875rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-style: normal;
+  margin-top: 1rem;
+}
+
+/* Summary Box */
+.ms-summarybox {
+  max-width: 768px;
+  margin: 3rem auto;
+  padding: 2rem 2.5rem;
+  background-color: var(--bg-card);
+  border-top: 4px solid var(--accent);
+  clear: both;
+}
+.ms-summarybox__title {
+  font-family: var(--font-condensed);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+.ms-summarybox__content {
+  font-size: 1.05rem;
+  line-height: 1.6;
 }
 
 /* Stat block */
@@ -119,6 +202,7 @@ article { max-width: 100%; }
   margin: 0 auto;
   background: var(--bg-alt);
   border-radius: 1rem;
+  clear: both;
 }
 .ms-stat__item { text-align: center; }
 .ms-stat__value {
@@ -134,6 +218,7 @@ article { max-width: 100%; }
   font-size: 0.875rem;
   color: var(--text-muted);
   margin-top: 0.375rem;
+  font-family: var(--font-condensed);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -145,6 +230,7 @@ article { max-width: 100%; }
   padding: 1.5rem;
   background: var(--bg-alt);
   border-radius: 0.75rem;
+  clear: both;
 }
 .ms-chart__title {
   font-family: var(--font-display);
@@ -158,39 +244,40 @@ article { max-width: 100%; }
 .bar:hover { filter: brightness(1.15); }
 
 /* Images */
-.ms-image { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; text-align: center; }
+.ms-image { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; text-align: center; clear: both; }
 .ms-image img { width: 100%; height: auto; border-radius: 0.5rem; }
 .ms-image figcaption { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem; font-style: italic; }
 
 /* Table */
-.ms-table { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; overflow-x: auto; }
+.ms-table { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; overflow-x: auto; clear: both; }
 .ms-table table { width: 100%; border-collapse: collapse; }
 .ms-table th, .ms-table td { padding: 0.625rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 .ms-table th { font-weight: 600; color: var(--accent); background: var(--bg-alt); }
 
 /* Callout */
 .ms-callout {
-  max-width: 740px;
+  max-width: 768px;
   margin: 2rem auto;
   padding: 1.25rem 1.5rem;
   border-radius: 0.5rem;
   border: 2px solid var(--accent);
   background: var(--bg-alt);
   font-size: 1rem;
+  clear: both;
 }
 
 /* Divider */
-.ms-divider { max-width: 860px; margin: 3rem auto; padding: 0 1.5rem; }
+.ms-divider { max-width: 860px; margin: 3rem auto; padding: 0 1.5rem; clear: both; }
 .ms-divider svg { display: block; width: 100%; height: 4px; }
 
 /* Video */
-.ms-video { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; }
+.ms-video { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; clear: both; }
 .ms-video__wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 0.5rem; }
 .ms-video__wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
 
 /* Two-col */
-.ms-twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-@media (max-width: 640px) { .ms-twocol { grid-template-columns: 1fr; } }
+.ms-twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; clear: both; }
+@media (max-width: 767px) { .ms-twocol { grid-template-columns: 1fr; } }
 
 /* Footer */
 .ms-footer {
@@ -199,8 +286,12 @@ article { max-width: 100%; }
   text-align: center;
   padding: 2.5rem 1.5rem;
   margin-top: 4rem;
+  clear: both;
+  font-family: var(--font-condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
-.ms-footer__text { font-size: 0.875rem; color: var(--text-muted); }
+.ms-footer__text { font-size: 0.875rem; color: var(--accent); }
 
 /* D3 axes */
 .tick line { stroke: var(--border); }
@@ -299,9 +390,14 @@ export function assembleHtml(opts: AssembleOptions): string {
       case "subsection":
         bodyParts.push(subsection(block));
         break;
-      case "pull-quote":
-        bodyParts.push(pullQuote(block));
+      case "summary":
+        bodyParts.push(summaryBox(block));
         break;
+      case "pull-quote": {
+        const pqAnn = block.annotations.find((a) => a.keyword === "pullquote" || a.keyword === "quote");
+        bodyParts.push(pullQuote(block, pqAnn));
+        break;
+      }
       case "data-table":
         bodyParts.push(dataTable(block));
         break;
@@ -346,7 +442,7 @@ export function assembleHtml(opts: AssembleOptions): string {
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Open+Sans+Condensed:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
@@ -364,6 +460,13 @@ ${head}
 ${bodyHtml}
 <script>
 ${CHART_INIT_SCRIPT}
+document.addEventListener("scroll", () => {
+  const scrolled = window.scrollY;
+  const bgs = document.querySelectorAll('[data-parallax="bg"]');
+  bgs.forEach(bg => {
+    bg.style.transform = \`translateY(\${scrolled * 0.15}px)\`;
+  });
+});
 </script>
 </body>
 </html>`;

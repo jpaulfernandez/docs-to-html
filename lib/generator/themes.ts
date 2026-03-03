@@ -12,47 +12,51 @@ interface ThemeTokens {
     fontDisplay: string;
     fontBody: string;
     fontMono: string;
+    fontCondensed: string;
 }
 
 const THEME_MAP: Record<Theme, ThemeTokens> = {
     light: {
-        bg: "#f5f6ff",
+        bg: "#f5f6ff", /* Ghost White */
         bgAlt: "#ffffff",
         bgCard: "#ffffff",
-        text: "#172038",
+        text: "#172038", /* Navy */
         textMuted: "#6c6f8b",
-        accent: "#ff5f1b",
+        accent: "#ff5f1b", /* Orange Courage */
         accentLight: "#ff8c5a",
         border: "#ebedff",
-        fontDisplay: "'PT Serif', 'Georgia', serif",
-        fontBody: "'IBM Plex Sans', 'system-ui', sans-serif",
+        fontDisplay: "'IBM Plex Sans', 'system-ui', sans-serif",
+        fontBody: "'PT Serif', 'Georgia', serif",
         fontMono: "'IBM Plex Mono', monospace",
+        fontCondensed: "'Open Sans Condensed', sans-serif",
     },
     dark: {
-        bg: "#101626",
+        bg: "#101626", /* Navy */
         bgAlt: "#18213a",
-        bgCard: "#18213a",
-        text: "#f5f6ff",
+        bgCard: "#1a2440",
+        text: "#f5f6ff", /* Ghost White */
         textMuted: "#cbccdc",
-        accent: "#ff5f1b",
+        accent: "#ff5f1b", /* Orange Courage */
         accentLight: "#ff8c5a",
         border: "#404551",
-        fontDisplay: "'PT Serif', 'Georgia', serif",
-        fontBody: "'IBM Plex Sans', 'system-ui', sans-serif",
+        fontDisplay: "'IBM Plex Sans', 'system-ui', sans-serif",
+        fontBody: "'PT Serif', 'Georgia', serif",
         fontMono: "'IBM Plex Mono', monospace",
+        fontCondensed: "'Open Sans Condensed', sans-serif",
     },
     orange: {
-        bg: "#ff5f1b",
+        bg: "#ff5f1b", /* Orange Courage */
         bgAlt: "#ff8c5a",
         bgCard: "#ff7a40",
-        text: "#ffffff",
-        textMuted: "#ffddd1",
-        accent: "#172038",
+        text: "#172038", /* Navy */
+        textMuted: "#ffffff",
+        accent: "#172038", /* Navy */
         accentLight: "#454d60",
         border: "#ff8c5a",
-        fontDisplay: "'PT Serif', 'Georgia', serif",
-        fontBody: "'IBM Plex Sans', 'system-ui', sans-serif",
+        fontDisplay: "'IBM Plex Sans', 'system-ui', sans-serif",
+        fontBody: "'PT Serif', 'Georgia', serif",
         fontMono: "'IBM Plex Mono', monospace",
+        fontCondensed: "'Open Sans Condensed', sans-serif",
     },
 };
 
@@ -70,5 +74,6 @@ export function getThemeCss(theme: Theme): string {
   --font-display: ${t.fontDisplay};
   --font-body: ${t.fontBody};
   --font-mono: ${t.fontMono};
+  --font-condensed: ${t.fontCondensed};
 }`;
 }

@@ -12,6 +12,19 @@ import { PreflightResult } from "@/lib/types/parser";
 type AppStage = "upload" | "preflight" | "generating" | "review" | "publish";
 type SubmitState = "idle" | "uploading" | "error";
 
+const UPLOAD_MESSAGES = [
+  "Extracting raw text from your document...",
+  "Scanning for structure and headings...",
+  "Detecting annotations and keywords...",
+  "Sending document to Gemini AI...",
+  "Inferring content blocks and archetypes...",
+  "Identifying pull quotes and key passages...",
+  "Classifying section layouts...",
+  "Running editorial validation checks...",
+  "Mapping design tokens to content...",
+  "Almost there — finalizing structure...",
+];
+
 const STAGES = ["Upload", "Analyze", "Review", "Publish"];
 const stageToIndex: Record<AppStage, number> = {
   upload: 0,
@@ -33,6 +46,8 @@ export default function UploadPage() {
   const hasDocx = files.some((f) => f.type === "docx");
   const canSubmit = hasDocx && selectedTheme !== null && submitState !== "uploading";
   const currentStageIndex = stageToIndex[appStage];
+  const [uploadMsgIndex, setUploadMsgIndex] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // beforeunload guard when session is active
   useEffect(() => {
@@ -51,6 +66,20 @@ export default function UploadPage() {
 
     setSubmitState("uploading");
     setServerError(null);
+    setUploadMsgIndex(0);
+    setUploadProgress(0);
+
+    // Animate upload messages
+    const msgTimer = setInterval(() => {
+      setUploadMsgIndex((i) => (i + 1) % UPLOAD_MESSAGES.length);
+    }, 2200);
+    // Animate progress bar — slowly creep up to ~90% while waiting
+    const progressTimer = setInterval(() => {
+      setUploadProgress((p) => {
+        if (p >= 88) { clearInterval(progressTimer); return p; }
+        return p + Math.random() * 4;
+      });
+    }, 1000);
 
     const formData = new FormData();
     formData.append("theme", selectedTheme!);
@@ -61,6 +90,9 @@ export default function UploadPage() {
     try {
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data: PreflightResult = await res.json();
+      clearInterval(msgTimer);
+      clearInterval(progressTimer);
+      setUploadProgress(100);
 
       if (!res.ok) {
         setServerError(data.error ?? "An unexpected error occurred. Please try again.");
@@ -73,6 +105,8 @@ export default function UploadPage() {
       setAppStage("preflight");
       setSubmitState("idle");
     } catch {
+      clearInterval(msgTimer);
+      clearInterval(progressTimer);
       setServerError("Could not reach the server. Check your connection and try again.");
       setSubmitState("error");
     }
@@ -225,8 +259,45 @@ export default function UploadPage() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+
+        {/* Upload Loading Screen */}
+        {submitState === "uploading" && (
+          <div className="w-full max-w-sm text-center space-y-6">
+            <div className="space-y-2">
+              {/* Animated orb */}
+              <div className="relative mx-auto w-16 h-16 mb-4">
+                <div className="absolute inset-0 rounded-full bg-orange-courage/20 animate-ping" />
+                <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-orange-courage to-navy flex items-center justify-center shadow-lg">
+                  <svg className="w-7 h-7 text-white animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-navy" style={{ fontFamily: "Georgia, serif" }}>
+                Analyzing your document
+              </h2>
+              <p className="text-sm text-system-gray font-sans min-h-[40px] transition-all duration-500">
+                {UPLOAD_MESSAGES[uploadMsgIndex]}
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-ash rounded-full h-1.5 overflow-hidden">
+              <div
+                className="h-1.5 bg-gradient-to-r from-orange-courage to-navy rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${Math.min(uploadProgress, 100)}%` }}
+              />
+            </div>
+
+            <p className="text-xs text-system-gray font-sans">
+              This can take up to 30–60 seconds for AI processing.
+            </p>
+          </div>
+        )}
+
         {/* Stage 1: Upload */}
-        {appStage === "upload" && (
+        {appStage === "upload" && submitState !== "uploading" && (
           <div className="w-full max-w-xl space-y-8">
             <div className="text-center space-y-2">
               <h1
@@ -288,22 +359,12 @@ export default function UploadPage() {
                     : "bg-ash text-system-gray cursor-not-allowed",
                 ].join(" ")}
               >
-                {submitState === "uploading" ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Analyzing&hellip;
-                  </>
-                ) : (
-                  <>
-                    Upload &amp; Analyze
-                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
-                    </svg>
-                  </>
-                )}
+                <>
+                  Upload &amp; Analyze
+                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
+                  </svg>
+                </>
               </button>
 
               {!canSubmit && submitState === "idle" && (

@@ -3,7 +3,7 @@ import { ClassificationContext, ClassificationResult, SeoContext, SeoData } from
 
 export async function classifyBlocks(blocks: ClassificationContext[]): Promise<ClassificationResult[]> {
     const apiKey = process.env.GEMINI_API_KEY;
-    const model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+    const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
     if (!apiKey) {
         console.warn("GEMINI_API_KEY missing. Falling back to empty classification.");
@@ -74,7 +74,7 @@ Suggest annotations (like @stat) if content patterns imply them (e.g., paragraph
 
 export async function generateSEO(context: SeoContext): Promise<SeoData> {
     const apiKey = process.env.GEMINI_API_KEY;
-    const model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+    const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
     const fallback: SeoData = {
         title: context.h1 || "Document",

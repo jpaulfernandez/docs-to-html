@@ -7,8 +7,11 @@ import {
   validateAnnotations,
 } from "../../../lib/parser/docx";
 import { classifyBlocks, generateSEO } from "../../../lib/ai/gemini";
+import { extractStructuredContent } from "../../../lib/ai/gemini-poc";
+import { convertPoCToBlocks } from "../../../lib/parser/bridge";
 import { ClassificationContext } from "../../../lib/types/ai";
 import { SeoContext } from "../../../lib/types/ai";
+import mammoth from "mammoth";
 
 const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -100,13 +103,28 @@ export async function POST(req: NextRequest) {
 
   // All checks passed — hand off to the parsing pipeline (Epic 02).
   try {
-    const blocks = await parseDocxBlocks(docxBuffer);
+    let blocks = await parseDocxBlocks(docxBuffer);
     await extractAnnotations(docxBuffer, blocks);
     mapHeuristicArchetypes(blocks);
+
+    const hasAnnotations = blocks.some(b => b.annotations.length > 0);
+
+    // AI MAGIC FALLBACK: If the user didn't write any annotations, use the new unstructured Gemini PoC
+    if (!hasAnnotations) {
+      console.log("No annotations detected. Using Gemini AI structure extraction...");
+      const { value: rawText } = await mammoth.extractRawText({ buffer: Buffer.from(docxBuffer) });
+      console.log(`Extracted raw text from DOCX: ${rawText.length} characters.`);
+      console.time("Gemini API structure extraction");
+      const structuredData = await extractStructuredContent(rawText);
+      console.timeEnd("Gemini API structure extraction");
+      blocks = convertPoCToBlocks(structuredData);
+      console.log(`Converted PoC structured data to ${blocks.length} blocks.`);
+    }
 
     const csvData = await parseCsvData(csvFiles);
 
     // Epic 04: Validation (async — HEAD-checks image URLs, validates CSV refs)
+    console.log("Validating annotations...");
     const { warnings: validationWarnings, errors: validationErrors } =
       await validateAnnotations(blocks, csvData);
 
@@ -130,10 +148,13 @@ export async function POST(req: NextRequest) {
       documentLengthBlocks: blocks.length,
     };
 
+    console.log("Starting classification and SEO generation...");
+    console.time("Gemini layout classification & SEO");
     const [classification, seoData] = await Promise.all([
       classifyBlocks(classificationPayload),
       generateSEO(seoPayload),
     ]);
+    console.timeEnd("Gemini layout classification & SEO");
 
     return NextResponse.json({
       ok: true,

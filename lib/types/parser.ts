@@ -1,52 +1,50 @@
-import type { ClassificationResult, SeoData } from "./ai";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type BlockType =
-  | "heading1"
-  | "heading2"
-  | "heading3"
-  | "paragraph"
-  | "bold-paragraph"
-  | "blockquote"
-  | "table"
-  | "divider";
-
-
-export type Archetype =
   | "hero"
-  | "section-break"
-  | "section-title"
-  | "subsection"
-  | "hero-body"
-  | "body"
-  | "emphasis"
-  | "pull-quote"
-  | "data-table"
-  | "divider"
-  | string; // AI might assign others
+  | "intro"
+  | "text"
+  | "pullquote"
+  | "parallax"
+  | "inline-image"
+  | "embed"
+  | "stat-block"
+  | "footnotes"
+  | "table";
 
-export interface Annotation {
-  keyword: string;
-  primaryValue: string | null;
-  params: Record<string, string>;
-  raw: string;
-  valid: boolean;
-  warnings: string[];
+export interface V2ParsedParagraph {
+  index: number;
+  text: string;
+  formatting: string[];
+}
+
+export interface V2ParsedDocument {
+  title: string | null;
+  author: string | null;
+  authorLink?: string | null;
+  paragraphs: V2ParsedParagraph[];
+  imageUrls: string[];
+  embedBlocks: string[];
+  tables: any[];
+}
+
+export interface BlockFieldData {
+  [key: string]: any;
 }
 
 export interface Block {
-  index: number;
-  type: BlockType;
-  content: string;
-  rawHtml: string;
-  heuristicArchetype?: Archetype;
-  archetype?: Archetype;
-  annotations: Annotation[];
+  id: string; // unique string ID for drag and drop
+  type: BlockType | string;
+  fields: BlockFieldData;
+  content?: any;
+  rawHtml?: any;
+  archetype?: any;
+  heuristicArchetype?: any;
+  annotations?: any[];
+  index?: any;
 }
 
-export interface CsvData {
-  headers: string[];
-  rows: Record<string, string>[];
-}
+export type CsvData = any;
+export type Annotation = any;
 
 export interface PreflightResult {
   ok: boolean;
@@ -55,16 +53,9 @@ export interface PreflightResult {
     name: string;
     size: number;
   };
-  csvFiles?: {
-    name: string;
-    size: number;
-  }[];
   blocks?: Block[];
-  csvData?: Record<string, CsvData>;
-  validationWarnings?: string[];
-  validationErrors?: string[];
-  classification?: ClassificationResult[];
-  seoData?: SeoData;
+  seoData?: any;
   error?: string;
   next?: string;
 }
+

@@ -1,176 +1,161 @@
-import { Block, Annotation } from "../types/parser";
-import { CsvData } from "../types/parser";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+function esc(s: string | undefined | null): string {
+  if (!s) return "";
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function getParam(ann: Annotation, key: string, fallback = ""): string {
-  return ann.params[key] ?? fallback;
+export function generateHero(fields: any): string {
+  const subtitle = fields.subtitle ? `<span class="block font-opensans font-bold tracking-[0.2em] text-orange uppercase mb-4 text-sm md:text-base">${esc(fields.subtitle)}</span>` : '';
+  const dateStr = fields.date ? `<span class="ml-2 pl-2 border-l border-ghost/30">${esc(fields.date)}</span>` : '';
+
+  return `<header data-block-id="${esc(fields._id)}" class="relative w-full h-[85vh] min-h-[600px] flex items-end justify-center overflow-hidden parallax-container bg-navy cursor-pointer hover:ring-2 hover:ring-orange/50 transition-shadow">
+        <div class="parallax-bg absolute left-0 -top-[10%] w-full h-[120%] bg-cover bg-center" style="background-image: url('${esc(fields.imageUrl)}');"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-[#17203833] to-[#172038E6]"></div>
+        <div class="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-navy to-transparent pointer-events-none z-[5]"></div>
+        <div class="relative z-10 w-full max-w-3xl px-6 py-16 mx-auto">
+            ${subtitle}
+            <h1 class="font-plex font-bold text-4xl md:text-5xl lg:text-6xl text-ghost leading-tight mb-6 drop-shadow-lg">${esc(fields.title)}</h1>
+            <p class="font-ptserif text-xl md:text-2xl text-ghost/90 mb-8 max-w-2xl drop-shadow-md">${fields.text ? esc(fields.text) : ''}</p>
+            <div class="font-opensans font-bold tracking-[0.15em] text-orange uppercase text-sm flex items-center gap-2">
+                <span>BY</span>
+                ${fields.authorLink ? `<a href="${esc(fields.authorLink)}" target="_blank" rel="noopener noreferrer" class="text-ghost hover:text-orange underline decoration-orange/50 underline-offset-4 transition-colors">${esc(fields.byline)}</a>` : `<span class="text-ghost">${esc(fields.byline)}</span>`}
+                ${dateStr}
+            </div>
+        </div>
+    </header>`;
 }
 
-export function heroSection(block: Block): string {
-  const imageAnn = block.annotations.find((a) => a.keyword === "image");
-  const bgUrl = imageAnn?.primaryValue ?? imageAnn?.params.url ?? "";
-  const isFullbleed = block.annotations.some(
-    (a) => a.keyword === "layout" && a.primaryValue === "fullbleed"
-  );
-  // Dark overlay for Deep Investigative: rgba(23, 32, 56, 0.2) to rgba(23, 32, 56, 0.9)
-  const bgStyle = bgUrl
-    ? `background-image: linear-gradient(to bottom, rgba(23, 32, 56, 0.2) 0%, rgba(23, 32, 56, 0.9) 100%), url('${esc(bgUrl)}'); background-size: cover; background-position: center;`
-    : "background: var(--bg-alt);";
+export function generateIntro(fields: any): string {
+  const text = fields.text || "";
+  // Extract first letter for dropcap if text exists
+  const match = text.match(/^([\s\S])([\s\S]*)$/);
+  if (!match) return '';
+  const firstChar = match[1];
+  const rest = match[2];
 
-  return `<header class="ms-hero${isFullbleed ? " ms-fullbleed" : ""}" data-anim="hero">
-  <div class="ms-hero__bg" style="${bgStyle}" data-parallax="bg"></div>
-  <div class="ms-hero__inner">
-    <h1 class="ms-hero__title" data-anim="fade-up">${esc(block.content)}</h1>
-  </div>
-</header>`;
+  return `<p data-block-id="${esc(fields._id)}" class="mb-8 cursor-pointer hover:bg-white/5 transition-colors p-2 rounded -mx-2"><span class="drop-cap">${esc(firstChar)}</span>${esc(rest)}</p>`;
 }
 
-export function sectionTitle(block: Block): string {
-  return `<section class="ms-section" data-anim="fade-up">
-  <h2 class="ms-section__title">${esc(block.content)}</h2>
-</section>`;
+export function generateText(fields: any): string {
+  let out = "";
+  if (fields.heading) {
+    out += `<h2 class="font-plex font-bold text-3xl md:text-4xl text-ghost mb-8 mt-16 tracking-tight">${esc(fields.heading)}</h2>\n`;
+  }
+  // Expected bodyHtml or raw text
+  let html = fields.bodyHtml || fields.text || "";
+  if (!html.startsWith("<")) {
+    html = `<p class="mb-8">${html}</p>`;
+  }
+  out += `<div data-block-id="${esc(fields._id)}" class="prose prose-invert prose-lg max-w-none prose-p:mb-8 text-ghost cursor-pointer hover:bg-white/5 transition-colors p-4 rounded -mx-4">${html}</div>`;
+  return out;
 }
 
-export function subsection(block: Block): string {
-  return `<div class="ms-subsection" data-anim="fade-up">
-  <h3 class="ms-subsection__title">${esc(block.content)}</h3>
+export function generatePullquote(fields: any): string {
+  const alignment = fields.alignment?.toLowerCase() || 'center';
+
+  if (alignment === 'center') {
+    return `<div data-block-id="${esc(fields._id)}" class="my-16 py-10 border-y-2 border-orange border-opacity-60 clear-both text-center max-w-2xl mx-auto px-4 relative cursor-pointer hover:bg-white/5 transition-colors rounded -mx-4">
+    <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-orange font-plex text-6xl leading-none">"</span>
+    <p class="font-ptserif italic text-3xl md:text-4xl text-ghost leading-snug">
+        ${esc(fields.text)}
+    </p>
+    ${fields.attribution ? `<footer class="mt-6 font-opensans text-orange tracking-[0.1em] text-sm uppercase font-bold">— ${esc(fields.attribution)}</footer>` : ''}
+</div>`;
+  } else if (alignment === 'left') {
+    return `<aside data-block-id="${esc(fields._id)}" class="w-full md:w-1/2 md:float-left md:mr-8 mb-8 mt-4 border-l-4 border-orange pl-6 py-2 clear-left cursor-pointer hover:bg-white/5 transition-colors rounded -ml-4">
+    <p class="font-ptserif italic text-2xl md:text-[1.75rem] text-ghost leading-tight mb-4">
+        "${esc(fields.text)}"
+    </p>
+    ${fields.attribution ? `<footer class="font-opensans text-orange tracking-[0.1em] text-sm uppercase font-bold">— ${esc(fields.attribution)}</footer>` : ''}
+</aside>`;
+  } else {
+    // Right alignment (default for non-center/left)
+    return `<aside data-block-id="${esc(fields._id)}" class="w-full md:w-1/2 md:float-right md:ml-8 mb-8 mt-4 border-l-4 border-orange pl-6 py-2 clear-right cursor-pointer hover:bg-white/5 transition-colors rounded -mr-4">
+    <p class="font-ptserif italic text-2xl md:text-[1.75rem] text-ghost leading-tight mb-4">
+        "${esc(fields.text)}"
+    </p>
+    ${fields.attribution ? `<footer class="font-opensans text-orange tracking-[0.1em] text-sm uppercase font-bold">— ${esc(fields.attribution)}</footer>` : ''}
+</aside>`;
+  }
+}
+
+export function generateParallaxBreak(fields: any): string {
+  // Requires closing the main inner column, inserting full width, re-opening inner column
+  return `</div>
+<div data-block-id="${esc(fields._id)}" class="relative w-full h-[60vh] min-h-[400px] my-8 overflow-hidden parallax-container border-y border-navy shadow-xl bg-navy clear-both cursor-pointer hover:ring-2 hover:ring-orange/50 transition-shadow">
+    <div class="parallax-bg absolute left-0 -top-[10%] w-full h-[120%] bg-cover bg-center" style="background-image: url('${esc(fields.imageUrl)}');"></div>
+    <div class="absolute inset-0 bg-[#172038] bg-opacity-40"></div>
+</div>
+${fields.caption ? `<div class="w-full max-w-3xl mx-auto px-6 mb-16">
+    <figcaption class="font-opensans tracking-[0.1em] text-sm text-ghost/70 uppercase border-l border-orange pl-3">${esc(fields.caption)}</figcaption>
+</div>` : ''}
+<div class="w-full max-w-3xl mx-auto px-6">`;
+}
+
+export function generateInlineImage(fields: any): string {
+  if (fields.size === 'Full') {
+    return `</div>
+<div data-block-id="${esc(fields._id)}" class="w-full my-16 clear-both cursor-pointer hover:ring-2 hover:ring-orange/50 transition-shadow">
+    <figure class="relative w-full">
+        <img src="${esc(fields.imageUrl)}" alt="${esc(fields.caption || 'Image')}" class="w-full h-auto object-cover" loading="lazy" />
+        ${fields.caption ? `<figcaption class="mt-4 font-opensans tracking-[0.1em] text-sm text-ghost/70 uppercase border-l border-orange pl-3 px-6 max-w-3xl mx-auto">${esc(fields.caption)}</figcaption>` : ''}
+    </figure>
+</div>
+<div class="w-full max-w-3xl mx-auto px-6">`;
+  }
+  return `</div>
+<div data-block-id="${esc(fields._id)}" class="w-full max-w-4xl mx-auto px-6 my-16 clear-both cursor-pointer hover:ring-2 hover:ring-orange/50 transition-shadow">
+    <figure class="relative">
+        <div class="p-2 bg-navylight shadow-2xl">
+            <img src="${esc(fields.imageUrl)}" alt="${esc(fields.caption || 'Image')}" class="w-full h-auto object-cover border border-navy shadow-inner" loading="lazy" />
+        </div>
+        ${fields.caption ? `<figcaption class="mt-4 font-opensans tracking-[0.1em] text-sm text-ghost/70 uppercase max-w-3xl mx-auto border-l border-orange pl-3">${esc(fields.caption)}</figcaption>` : ''}
+    </figure>
+</div>
+<div class="w-full max-w-3xl mx-auto px-6">`;
+}
+
+export function generateStatBlock(fields: any): string {
+  // Collect up to 3 stats
+  const stats = [];
+  if (fields.stat1Value) stats.push({ val: fields.stat1Value, label: fields.stat1Label });
+  if (fields.stat2Value) stats.push({ val: fields.stat2Value, label: fields.stat2Label });
+  if (fields.stat3Value) stats.push({ val: fields.stat3Value, label: fields.stat3Label });
+
+  if (stats.length === 0) return '';
+  return `<div data-block-id="${esc(fields._id)}" class="bg-navylight border-t-4 border-orange p-6 md:p-8 mb-16 shadow-lg flex flex-wrap justify-center gap-8 text-center cursor-pointer hover:ring-2 hover:ring-orange/50 transition-shadow">
+        ${stats.map(s => `
+        <div class="flex-1 min-w-[120px]">
+            <span class="block font-plex font-bold text-4xl text-orange mb-2">${esc(s.val)}</span>
+            <span class="block font-opensans tracking-[0.1em] text-sm text-ghost uppercase">${esc(s.label)}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+export function generateSummaryBox(fields: any): string {
+  let itemsHtml = '';
+  if (Array.isArray(fields.items)) {
+    itemsHtml = fields.items.map((i: string) => `<li class="relative pl-6 before:content-[''] before:absolute before:left-0 before:top-2.5 before:w-2 before:h-2 before:bg-orange before:rounded-full">${esc(i)}</li>`).join('');
+  } else if (fields.text) {
+    itemsHtml = `<li class="relative pl-6 before:content-[''] before:absolute before:left-0 before:top-2.5 before:w-2 before:h-2 before:bg-orange before:rounded-full">${esc(fields.text)}</li>`;
+  }
+
+  return `<div data-block-id="${esc(fields._id)}" class="bg-navylight border-t-4 border-orange p-6 md:p-8 mb-16 shadow-lg cursor-pointer hover:ring-2 hover:ring-orange/50 transition-shadow">
+    <h2 class="font-opensans font-bold tracking-[0.15em] text-orange uppercase mb-6 text-lg">${fields.title || 'IN SUMMARY'}</h2>
+    <ul class="list-none space-y-4 font-ptserif text-ghost text-base md:text-lg">
+        ${itemsHtml}
+    </ul>
 </div>`;
 }
 
-export function bodySection(block: Block): string {
-  return `<section class="ms-body" data-anim="fade-up">
-  <p class="ms-body__text">${esc(block.content)}</p>
-</section>`;
-}
-
-export function boldSection(block: Block): string {
-  return `<section class="ms-emphasis" data-anim="fade-up">
-  <p class="ms-emphasis__text">${esc(block.content)}</p>
-</section>`;
-}
-
-export function pullQuote(block: Block, ann?: Annotation): string {
-  const style = ann ? getParam(ann, "style", "center") : "center";
-  const citation = ann ? getParam(ann, "citation", "") : "";
-  return `<section class="ms-pullquote ms-pullquote--${esc(style)}" data-anim="slide-left">
-  <blockquote class="ms-pullquote__text">${esc(block.content)}</blockquote>
-  ${citation ? `<cite class="ms-pullquote__citation">${esc(citation)}</cite>` : ""}
-</section>`;
-}
-
-export function summaryBox(block: Block): string {
-  // Treat rawHtml as a list or structured block if paragraph, or just string.
-  return `<section class="ms-summarybox" data-anim="fade-up">
-  <h2 class="ms-summarybox__title">IN SUMMARY</h2>
-  <div class="ms-summarybox__content">${block.rawHtml}</div>
-</section>`;
-}
-
-export function statBlock(stats: Array<{ value: string; label: string }>): string {
-  const items = stats
-    .map(
-      (s) =>
-        `<div class="ms-stat__item">
-      <span class="ms-stat__value" data-target="${esc(s.value)}">${esc(s.value)}</span>
-      <span class="ms-stat__label">${esc(s.label)}</span>
-    </div>`
-    )
-    .join("\n");
-  return `<section class="ms-statblock" data-anim="stats">
-  ${items}
-</section>`;
-}
-
-export function inlineImage(ann: Annotation): string {
-  const url = ann.primaryValue ?? ann.params.url ?? "";
-  const caption = getParam(ann, "caption", "");
-  const alt = getParam(ann, "alt", caption || "Image");
-  const align = getParam(ann, "align", "center");
-  return `<section class="ms-image ms-image--${esc(align)}" data-anim="fade-up">
-  <figure>
-    <img src="${esc(url)}" alt="${esc(alt)}" loading="lazy" />
-    ${caption ? `<figcaption>${esc(caption)}</figcaption>` : ""}
-  </figure>
-</section>`;
-}
-
-export function chartSection(
-  block: Block,
-  ann: Annotation,
-  csvData: Record<string, CsvData>,
-  chartIndex: number
-): string {
-  const chartType = ann.params.type ?? "bar";
-  const title = getParam(ann, "title", block.content);
-  const source = ann.params.source ?? "";
-  const xKey = ann.params.x ?? "";
-  const yKey = ann.params.y ?? "";
-  const color = ann.params.color ?? "var(--accent)";
-  const id = `chart-${chartIndex}`;
-
-  const csv = source ? csvData[source] : null;
-  const rows = csv?.rows ?? [];
-  const dataJson = JSON.stringify(rows);
-
-  return `<section class="ms-chart" data-anim="fade-up">
-  ${title ? `<h3 class="ms-chart__title">${esc(title)}</h3>` : ""}
-  <div class="ms-chart__wrap">
-    <svg id="${id}" class="ms-chart__svg"></svg>
-  </div>
-  <script type="application/json" id="${id}-data">${dataJson}</script>
-  <script>window.__charts = window.__charts || []; window.__charts.push({id:"${id}",type:"${chartType}",xKey:${JSON.stringify(xKey)},yKey:${JSON.stringify(yKey)},color:${JSON.stringify(color)}});</script>
-</section>`;
-}
-
-export function dataTable(block: Block): string {
-  // Re-use the rawHtml for tables since mammoth already parsed it
-  return `<section class="ms-table" data-anim="fade-up">
-  <div class="ms-table__wrap">${block.rawHtml}</div>
-</section>`;
-}
-
-export function dividerSection(): string {
-  return `<div class="ms-divider" data-anim="line-draw">
-  <svg viewBox="0 0 800 4" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="2" x2="800" y2="2" stroke="var(--accent)" stroke-width="2" stroke-dasharray="800" stroke-dashoffset="800" class="ms-divider__line"/></svg>
-</div>`;
-}
-
-export function calloutBox(block: Block, ann: Annotation): string {
-  const style = getParam(ann, "style", "default");
-  return `<section class="ms-callout ms-callout--${esc(style)}" data-anim="fade-up">
-  <p>${esc(block.content)}</p>
-</section>`;
-}
-
-export function videoEmbed(ann: Annotation): string {
-  const url = ann.primaryValue ?? ann.params.url ?? "";
-  // Convert YouTube watch URL to embed
-  const embedUrl = url
-    .replace("youtube.com/watch?v=", "youtube.com/embed/")
-    .replace("youtu.be/", "youtube.com/embed/");
-  return `<section class="ms-video" data-anim="fade-up">
-  <div class="ms-video__wrap">
-    <iframe src="${esc(embedUrl)}" loading="lazy" allowfullscreen title="Embedded video"></iframe>
-  </div>
-</section>`;
-}
-
-export function twoColumnSection(block: Block): string {
-  return `<section class="ms-twocol" data-anim="fade-up">
-  <div class="ms-twocol__col"><p>${esc(block.content)}</p></div>
-  <div class="ms-twocol__col"></div>
-</section>`;
-}
-
-export function footerSection(): string {
-  return `<footer class="ms-footer" data-anim="fade-up">
-  <p class="ms-footer__text">Published with Rappler Doc to Microsite · ${new Date().getFullYear()}</p>
-</footer>`;
+export function generateEmbed(fields: any): string {
+  return `<div data-block-id="${esc(fields._id)}" class="my-16 cursor-pointer hover:ring-2 hover:ring-orange/50 transition-shadow p-2 rounded -mx-2">
+        ${fields.heading ? `<h3 class="font-plex font-bold text-2xl text-ghost mb-6">${esc(fields.heading)}</h3>` : ''}
+        <div class="bg-navylight p-2 shadow-lg mb-4">
+            ${fields.embedCode}
+        </div>
+        ${fields.caption ? `<figcaption class="font-opensans tracking-[0.1em] text-sm text-ghost/70 uppercase border-l border-orange pl-3">${esc(fields.caption)}</figcaption>` : ''}
+    </div>`;
 }

@@ -1,33 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { assembleHtml } from "../../../lib/generator/assemble";
-import { PreflightResult } from "../../../lib/types/parser";
-import { Theme } from "../../../lib/generator/themes";
+import { NextResponse } from 'next/server';
+import { assembleHtml } from '@/lib/generator/assemble';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
     try {
-        const body: PreflightResult = await req.json();
-
-        if (!body.blocks || !body.seoData || !body.theme) {
-            return NextResponse.json(
-                { error: "Missing required fields: blocks, seoData, theme." },
-                { status: 400 }
-            );
-        }
-
+        const body = await request.json();
         const html = assembleHtml({
-            blocks: body.blocks,
-            csvData: body.csvData ?? {},
-            classification: body.classification ?? [],
+            blocks: body.blocks || [],
             seoData: body.seoData,
-            theme: body.theme as Theme,
-            docName: body.docx?.name,
+            docName: body.docx?.name
         });
 
         return NextResponse.json({ ok: true, html });
     } catch (err: unknown) {
-        console.error("Error in /api/generate:", err);
+        console.error("HTML Generation error:", err);
         return NextResponse.json(
-            { error: "Failed to generate microsite: " + (err instanceof Error ? err.message : String(err)) },
+            { ok: false, error: err instanceof Error ? err.message : "Unknown Error" },
             { status: 500 }
         );
     }

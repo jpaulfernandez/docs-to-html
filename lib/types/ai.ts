@@ -1,4 +1,3 @@
-import { Archetype } from "./parser";
 
 export interface ClassificationContext {
     blockIndex: number;
@@ -9,7 +8,7 @@ export interface ClassificationContext {
 
 export interface ClassificationResult {
     blockIndex: number;
-    archetype: Archetype | string;
+    archetype: string;
     confidence: number;
     suggestions: string[];
 }

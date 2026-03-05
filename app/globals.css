@@ -2,12 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Rappler App Shell ─────────────────────────────────────────────── */
+/* ─── Rappler App Shell (V2) ─────────────────────────────────────────────── */
 :root {
   --background: #f5f6ff;
   --foreground: #172038;
 
-  /* App chrome (the uploader UI itself — always uses these, not the generated theme) */
+  /* App chrome */
   --app-bg: #f5f6ff;
   --app-bg-card: #ffffff;
   --app-text: #172038;
@@ -15,43 +15,6 @@
   --app-accent: #ff5f1b;
   --app-border: #ebedff;
   --app-border-focus: #ff5f1b;
-}
-
-/* ─── Generated microsite themes (CSS vars injected into generated HTML) ─ */
-/* Light theme tokens */
-[data-theme="light"] {
-  --color-bg: #f5f6ff;
-  --color-bg-alt: #ffffff;
-  --color-text: #172038;
-  --color-text-muted: #6c6f8b;
-  --color-accent: #ff5f1b;
-  --color-border: #ebedff;
-  --font-display: "'PTSerifRegular', Georgia, serif";
-  --font-body: "'IBMPlexSans', 'IBM Plex Sans', system-ui, sans-serif";
-}
-
-/* Dark theme tokens */
-[data-theme="dark"] {
-  --color-bg: #101626;
-  --color-bg-alt: #18213a;
-  --color-text: #ffffff;
-  --color-text-muted: #70737d;
-  --color-accent: #ff5f1b;
-  --color-border: #404551;
-  --font-display: "'PTSerifRegular', Georgia, serif";
-  --font-body: "'IBMPlexSans', 'IBM Plex Sans', system-ui, sans-serif";
-}
-
-/* Orange theme tokens */
-[data-theme="orange"] {
-  --color-bg: #ff5f1b;
-  --color-bg-alt: #ff8c5a;
-  --color-text: #ffffff;
-  --color-text-muted: #ffddd1;
-  --color-accent: #172038;
-  --color-border: #ff8c5a;
-  --font-display: "'PTSerifRegular', Georgia, serif";
-  --font-body: "'IBMPlexSans', 'IBM Plex Sans', system-ui, sans-serif";
 }
 
 /* ─── Base styles ────────────────────────────────────────────────────── */

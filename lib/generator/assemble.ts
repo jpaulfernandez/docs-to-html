@@ -1,473 +1,173 @@
-import { Block, CsvData } from "../types/parser";
-import { ClassificationResult } from "../types/ai";
+import { Block } from "../types/parser";
 import { SeoData } from "../types/ai";
-import { Theme, getThemeCss } from "./themes";
-import {
-  heroSection, sectionTitle, subsection, bodySection, boldSection,
-  pullQuote, summaryBox, statBlock, inlineImage, chartSection, dataTable,
-  dividerSection, calloutBox, videoEmbed, twoColumnSection, footerSection,
-} from "./components";
-import { CHART_INIT_SCRIPT } from "./charts";
+import * as comps from "./components";
 
 export interface AssembleOptions {
   blocks: Block[];
-  csvData: Record<string, CsvData>;
-  classification: ClassificationResult[];
-  seoData: SeoData;
-  theme: Theme;
+  seoData?: SeoData;
   docName?: string;
 }
 
-function getArchetype(block: Block, classification: ClassificationResult[]): string {
-  const ai = classification.find((c) => c.blockIndex === block.index);
-  return ai?.archetype ?? block.archetype ?? block.heuristicArchetype ?? "body";
-}
-
-const BASE_CSS = `
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body);
-  line-height: 1.625;
-  font-size: 1.125rem;
-  -webkit-font-smoothing: antialiased;
-}
-article { max-width: 100%; overflow-x: hidden; }
-
-/* Links */
-a {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  transition: color 0.3s ease;
-}
-a:hover {
-  color: var(--bg-alt);
-}
-
-/* Hero */
-.ms-hero {
-  min-height: 90vh;
-  display: flex;
-  align-items: flex-end;
-  padding: 4rem 2rem 5rem;
-  position: relative;
-  background-color: var(--bg-alt);
-  overflow: hidden;
-}
-.ms-hero.ms-fullbleed { min-height: 100vh; }
-.ms-hero__bg {
-  position: absolute;
-  top: -15%; left: 0;
-  width: 100%; height: 130%;
-  z-index: 0;
-}
-.ms-hero__inner { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; width: 100%; }
-.ms-hero__title {
-  font-family: var(--font-display);
-  font-size: clamp(2.5rem, 6vw, 5rem);
-  font-weight: 700;
-  line-height: 1.15;
-  color: #fff;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 16px rgba(0,0,0,0.4);
-}
-
-/* Body sections */
-.ms-section, .ms-body, .ms-subsection, .ms-emphasis, .ms-twocol {
-  max-width: 768px;
-  margin: 0 auto;
-  padding: 3rem 1.5rem;
-}
-.ms-section__title {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 1rem;
-  border-left: 4px solid var(--accent);
-  padding-left: 1rem;
-  clear: both;
-}
-.ms-subsection__title {
-  font-family: var(--font-display);
-  font-size: 1.375rem;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 0.5rem;
-  clear: both;
-}
-.ms-body__text {
-  font-size: 1.125rem;
-  color: var(--text);
-  line-height: 1.625;
-}
-.ms-body:first-of-type .ms-body__text::first-letter {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 5rem;
-  color: var(--accent);
-  float: left;
-  line-height: 1;
-  padding-right: 0.5rem;
-  margin-top: -0.5rem;
-}
-.ms-emphasis__text {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--accent);
-  font-style: italic;
-}
-
-/* Pull quote */
-.ms-pullquote {
-  margin: 3rem auto;
-  padding: 2.5rem 0;
-  background: transparent;
-  clear: both;
-}
-.ms-pullquote--center {
-  max-width: 860px;
-  border-top: 2px solid var(--accent);
-  border-bottom: 2px solid var(--accent);
-  text-align: center;
-}
-.ms-pullquote--right {
-  width: 50%;
-  float: right;
-  margin: 1.5rem 0 1.5rem 1.5rem;
-  padding: 1rem 0 1rem 1.5rem;
-  border-left: 4px solid var(--accent);
-  clear: right;
-}
-@media (max-width: 767px) {
-  .ms-pullquote--right {
-    width: 100%;
-    float: none;
-    margin: 2rem 0;
-  }
-}
-.ms-pullquote__text {
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  line-height: 1.4;
-  color: var(--text);
-  font-style: italic;
-}
-.ms-pullquote__citation {
-  display: block;
-  font-family: var(--font-condensed);
-  font-size: 0.875rem;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-style: normal;
-  margin-top: 1rem;
-}
-
-/* Summary Box */
-.ms-summarybox {
-  max-width: 768px;
-  margin: 3rem auto;
-  padding: 2rem 2.5rem;
-  background-color: var(--bg-card);
-  border-top: 4px solid var(--accent);
-  clear: both;
-}
-.ms-summarybox__title {
-  font-family: var(--font-condensed);
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 1rem;
-}
-.ms-summarybox__content {
-  font-size: 1.05rem;
-  line-height: 1.6;
-}
-
-/* Stat block */
-.ms-statblock {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
-  justify-content: center;
-  padding: 3rem 1.5rem;
-  max-width: 900px;
-  margin: 0 auto;
-  background: var(--bg-alt);
-  border-radius: 1rem;
-  clear: both;
-}
-.ms-stat__item { text-align: center; }
-.ms-stat__value {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  font-weight: 700;
-  color: var(--accent);
-  line-height: 1;
-}
-.ms-stat__label {
-  display: block;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  margin-top: 0.375rem;
-  font-family: var(--font-condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-/* Charts */
-.ms-chart {
-  max-width: 860px;
-  margin: 2.5rem auto;
-  padding: 1.5rem;
-  background: var(--bg-alt);
-  border-radius: 0.75rem;
-  clear: both;
-}
-.ms-chart__title {
-  font-family: var(--font-display);
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-.ms-chart__wrap { width: 100%; overflow-x: auto; }
-.ms-chart__svg { display: block; width: 100%; }
-.bar { transition: filter 0.2s; }
-.bar:hover { filter: brightness(1.15); }
-
-/* Images */
-.ms-image { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; text-align: center; clear: both; }
-.ms-image img { width: 100%; height: auto; border-radius: 0.5rem; }
-.ms-image figcaption { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem; font-style: italic; }
-
-/* Table */
-.ms-table { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; overflow-x: auto; clear: both; }
-.ms-table table { width: 100%; border-collapse: collapse; }
-.ms-table th, .ms-table td { padding: 0.625rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-.ms-table th { font-weight: 600; color: var(--accent); background: var(--bg-alt); }
-
-/* Callout */
-.ms-callout {
-  max-width: 768px;
-  margin: 2rem auto;
-  padding: 1.25rem 1.5rem;
-  border-radius: 0.5rem;
-  border: 2px solid var(--accent);
-  background: var(--bg-alt);
-  font-size: 1rem;
-  clear: both;
-}
-
-/* Divider */
-.ms-divider { max-width: 860px; margin: 3rem auto; padding: 0 1.5rem; clear: both; }
-.ms-divider svg { display: block; width: 100%; height: 4px; }
-
-/* Video */
-.ms-video { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; clear: both; }
-.ms-video__wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 0.5rem; }
-.ms-video__wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-
-/* Two-col */
-.ms-twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; clear: both; }
-@media (max-width: 767px) { .ms-twocol { grid-template-columns: 1fr; } }
-
-/* Footer */
-.ms-footer {
-  background: var(--bg-alt);
-  border-top: 1px solid var(--border);
-  text-align: center;
-  padding: 2.5rem 1.5rem;
-  margin-top: 4rem;
-  clear: both;
-  font-family: var(--font-condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-.ms-footer__text { font-size: 0.875rem; color: var(--accent); }
-
-/* D3 axes */
-.tick line { stroke: var(--border); }
-.tick text { fill: var(--text-muted); font-size: 11px; font-family: var(--font-mono); }
-.domain { stroke: var(--border); }
-`;
-
 export function assembleHtml(opts: AssembleOptions): string {
-  const { blocks, csvData, classification, seoData, theme } = opts;
+  const { blocks, seoData = { title: 'Rappler Story', description: '', keywords: [], og_image_suggestion: '', article_type: '', reading_time_minutes: 0 } as SeoData } = opts;
 
-  const themeCss = getThemeCss(theme);
-
-  // --- Build body HTML ---
   const bodyParts: string[] = [];
-  let chartIndex = 0;
-  let i = 0;
   let hasHero = false;
 
-  while (i < blocks.length) {
-    const block = blocks[i];
-    const archetype = getArchetype(block, classification);
+  // Output wrapper open
+  const openMain = `\n<main class="w-full pb-20">\n<div class="w-full max-w-3xl mx-auto px-6 pt-16">\n`;
 
-    // Hero
-    if (!hasHero && block.type === "heading1") {
-      bodyParts.push(heroSection(block));
+  for (const block of blocks) {
+    if (block.type === 'hero') {
+      bodyParts.push(comps.generateHero(block.fields));
       hasHero = true;
-      i++;
+      bodyParts.push(openMain);
       continue;
     }
 
-    // Collect consecutive stat annotations on the same block
-    const statAnns = block.annotations.filter((a) => a.keyword === "stat" && a.valid !== false);
-    if (statAnns.length > 0) {
-      const stats = statAnns.map((a) => ({
-        value: a.primaryValue ?? a.params.value ?? "–",
-        label: a.params.label ?? "",
-      }));
-      bodyParts.push(statBlock(stats));
-      i++;
-      continue;
+    // If a non-hero block appears but we haven't opened main
+    if (!hasHero) {
+      bodyParts.push(openMain);
+      hasHero = true;
     }
 
-    // Image annotation
-    const imageAnn = block.annotations.find((a) => a.keyword === "image");
-    if (imageAnn) {
-      const pos = imageAnn.params.position ?? "inline";
-      if (pos !== "background") {
-        bodyParts.push(inlineImage(imageAnn));
-      }
-      // background images are handled inside heroSection; skip standalone
-      i++;
-      continue;
-    }
+    const compFields = { ...block.fields, _id: block.id };
 
-    // Chart annotation
-    const chartAnn = block.annotations.find((a) => a.keyword === "chart");
-    if (chartAnn) {
-      bodyParts.push(chartSection(block, chartAnn, csvData, chartIndex++));
-      i++;
-      continue;
-    }
-
-    // Callout
-    const calloutAnn = block.annotations.find((a) => a.keyword === "callout");
-    if (calloutAnn) {
-      bodyParts.push(calloutBox(block, calloutAnn));
-      i++;
-      continue;
-    }
-
-    // Embed / video
-    const embedAnn = block.annotations.find((a) => a.keyword === "embed");
-    if (embedAnn) {
-      bodyParts.push(videoEmbed(embedAnn));
-      i++;
-      continue;
-    }
-
-    // Layout: two-column
-    const layoutAnn = block.annotations.find((a) => a.keyword === "layout");
-    if (layoutAnn?.primaryValue === "two-column") {
-      bodyParts.push(twoColumnSection(block));
-      i++;
-      continue;
-    }
-
-    // Fall through to archetype
-    switch (archetype) {
-      case "hero":
-      case "section-break":
-        bodyParts.push(sectionTitle(block));
+    switch (block.type) {
+      case 'intro':
+        bodyParts.push(comps.generateIntro(compFields));
         break;
-      case "section-title":
-        bodyParts.push(sectionTitle(block));
+      case 'text':
+        bodyParts.push(comps.generateText(compFields));
         break;
-      case "subsection":
-        bodyParts.push(subsection(block));
+      case 'pullquote':
+        bodyParts.push(comps.generatePullquote(compFields));
         break;
-      case "summary":
-        bodyParts.push(summaryBox(block));
+      case 'parallax':
+      case 'inline-image':
+        if (block.fields.size === 'Parallax') {
+          bodyParts.push(comps.generateParallaxBreak(compFields));
+        } else {
+          bodyParts.push(comps.generateInlineImage(compFields));
+        }
         break;
-      case "pull-quote": {
-        const pqAnn = block.annotations.find((a) => a.keyword === "pullquote" || a.keyword === "quote");
-        bodyParts.push(pullQuote(block, pqAnn));
+      case 'stat-block':
+        bodyParts.push(comps.generateStatBlock(compFields));
         break;
-      }
-      case "data-table":
-        bodyParts.push(dataTable(block));
+      case 'summary-box':
+      case 'summary':
+        bodyParts.push(comps.generateSummaryBox(compFields));
         break;
-      case "divider":
-        bodyParts.push(dividerSection());
-        break;
-      case "emphasis":
-        bodyParts.push(boldSection(block));
+      case 'embed':
+        bodyParts.push(comps.generateEmbed(compFields));
         break;
       default:
-        if (block.content.trim()) {
-          bodyParts.push(bodySection(block));
+        if (block.fields && (block.fields.text || block.fields.bodyHtml)) {
+          bodyParts.push(comps.generateText(compFields));
         }
     }
-    i++;
   }
 
-  bodyParts.push(footerSection());
+  if (hasHero) {
+    bodyParts.push(`</div>\n</main>`);
+  } else if (bodyParts.length > 0) {
+    bodyParts.push(`</div>\n</main>`);
+  }
 
-  const bodyHtml = `<article>\n${bodyParts.join("\n")}\n</article>`;
-
-  // --- JSON-LD ---
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: seoData.title,
-    description: seoData.description,
-    datePublished: new Date().toISOString(),
-  };
-
-  // --- SEO head ---
-  const head = `<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${seoData.title}</title>
-<meta name="description" content="${seoData.description.replace(/"/g, "&quot;")}">
-<meta name="keywords" content="${seoData.keywords.join(", ")}">
-<meta property="og:title" content="${seoData.title.replace(/"/g, "&quot;")}">
-<meta property="og:description" content="${seoData.description.replace(/"/g, "&quot;")}">
-<meta property="og:type" content="article">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${seoData.title.replace(/"/g, "&quot;")}">
-<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Open+Sans+Condensed:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-<style>
-${themeCss}
-${BASE_CSS}
-</style>`;
+  const bodyContent = bodyParts.join('\n\n');
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-${head}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${seoData.title}</title>
+    <meta name="description" content="${seoData.description.replace(/"/g, "&quot;")}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@600;700&family=Open+Sans:wght@700&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#172038',
+                        orange: '#FF5F1B',
+                        ghost: '#F5F6FF',
+                        navylight: '#1a2440'
+                    },
+                    fontFamily: {
+                        plex: ['"IBM Plex Sans"', 'sans-serif'],
+                        ptserif: ['"PT Serif"', 'serif'],
+                        opensans: ['"Open Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        body { background-color: #172038; }
+        .drop-cap { float: left; font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; color: #FF5F1B; font-size: 5rem; line-height: 0.8; padding-right: 0.75rem; padding-top: 0.5rem; }
+        .parallax-container { clip-path: inset(0); }
+        .prose p { margin-bottom: 2rem; }
+        .prose a { color: #FF5F1B; text-decoration: underline; text-underline-offset: 4px; font-weight: 700; transition: color 0.3s; }
+        .prose a:hover { color: #F5F6FF; }
+    </style>
 </head>
-<body>
-${bodyHtml}
-<script>
-${CHART_INIT_SCRIPT}
-document.addEventListener("scroll", () => {
-  const scrolled = window.scrollY;
-  const bgs = document.querySelectorAll('[data-parallax="bg"]');
-  bgs.forEach(bg => {
-    bg.style.transform = \`translateY(\${scrolled * 0.15}px)\`;
-  });
-});
-</script>
+<body class="bg-navy text-ghost font-ptserif text-lg md:text-[1.125rem] leading-relaxed antialiased overflow-x-hidden">
+    ${bodyContent}
+
+    <!-- FOOTER -->
+    <footer class="bg-navylight py-20 border-t-4 border-navy clear-both mt-12 relative z-20">
+        <div class="max-w-3xl mx-auto px-6 flex flex-col items-center text-center">
+            <a href="https://www.rappler.com" target="_blank" class="block mb-8">
+                <img src="https://support.rappler.com/assets/logo.16f23012.svg" alt="Rappler" class="h-10 md:h-12 w-auto filter brightness-0 invert" style="filter: brightness(0) invert(1);" />
+            </a>
+            <p class="font-opensans font-bold tracking-[0.2em] text-orange uppercase text-xl md:text-2xl mb-8">
+                FEARLESS REPORTING DELIVERED TO YOU
+            </p>
+            <a href="https://www.rappler.com/newsletters/" target="_blank" class="font-opensans font-bold uppercase tracking-[0.15em] text-ghost border-2 border-ghost py-3 px-8 hover:bg-ghost hover:text-navy transition-all duration-300 text-sm md:text-base">
+                Subscribe to our Newsletters
+            </a>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+             const parallaxElements = document.querySelectorAll('.parallax-bg');
+             const handleScroll = () => {
+                 const scrolled = window.scrollY;
+                 parallaxElements.forEach(el => {
+                     const parent = el.closest('.parallax-container');
+                     const parentTop = parent ? parent.offsetTop : 0;
+                     const relativeScroll = scrolled - parentTop;
+                     el.style.transform = \`translate3d(0, \${relativeScroll * 0.15}px, 0)\`;
+                 });
+             };
+             let ticking = false;
+             window.addEventListener('scroll', () => {
+                 if (!ticking) {
+                     window.requestAnimationFrame(() => {
+                         handleScroll();
+                         ticking = false;
+                     });
+                     ticking = true;
+                 }
+             });
+             handleScroll();
+        });
+
+        document.addEventListener('click', (e) => {
+             const blockEl = e.target.closest('[data-block-id]');
+             if (blockEl) {
+                 e.preventDefault();
+                 const id = blockEl.getAttribute('data-block-id');
+                 window.parent.postMessage({ type: 'BLOCK_CLICKED', id }, '*');
+             }
+        });
+    </script>
 </body>
 </html>`;
 }
